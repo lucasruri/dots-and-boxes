@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Puntos y cajas</title>
+<meta name="description" content="Juego de puntos y cajas: contra la máquina, en el mismo dispositivo u online con un amigo.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='6' y='6' width='20' height='20' fill='%231f4fd1' fill-opacity='.25'/%3E%3Cpath d='M6 6h20v20' stroke='%231f4fd1' stroke-width='3' fill='none'/%3E%3Cpath d='M6 6v20h20' stroke='%23d4262c' stroke-width='3' fill='none'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* Theme: a squared school notebook where a blue pen and a red pen fight it out.
+   Night theme: a chalkboard. Fonts: Caveat (headings) + Patrick Hand (UI). */
+:root{color-scheme:light dark;--bg:light-dark(#fdfdfb,#1c2a23);--grid:light-dark(#d5e4f0,#273a31);--margin:light-dark(#f3a9a9,#4d3634);--ink:light-dark(#1c2333,#eef1ea);--soft:light-dark(#5b6475,#a8b6ad);--p1:light-dark(#1f4fd1,#86b6ff);--p2:light-dark(#d4262c,#ff8d7d);--dot:light-dark(#1c2333,#f3f5ef);--card:light-dark(#fff,#22332a);--line:light-dark(#dfe5ec,#34483d)}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;color:var(--ink);font:18px/1.45 "Patrick Hand",system-ui,sans-serif;overflow-x:clip;min-height:100vh;
+background:linear-gradient(90deg,transparent calc(max(3vw,14px) - 1px),var(--margin) calc(max(3vw,14px) - 1px),var(--margin) calc(max(3vw,14px) + 1px),transparent calc(max(3vw,14px) + 1px)),
+repeating-linear-gradient(0deg,var(--grid) 0 1px,transparent 1px 24px),repeating-linear-gradient(90deg,var(--grid) 0 1px,transparent 1px 24px),var(--bg)}
+main{max-width:640px;margin:0 auto;padding:clamp(18px,4vw,40px) max(4vw,22px) 40px}
+h1{font:700 clamp(40px,8vw,56px)/1.05 Caveat,cursive;margin:0 0 4px;text-wrap:balance}
+.sub{margin:0 0 18px;color:var(--soft)}
+.score{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin-bottom:10px}
+.player{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;transition:transform .2s,border-color .2s}
+.player b{font:700 40px/1 Caveat,cursive;font-variant-numeric:tabular-nums}
+.player span{font-size:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.player.blue{color:var(--p1)}.player.red{color:var(--p2)}
+.player.active{border-color:currentColor;transform:translateY(-2px);box-shadow:0 4px 0 -1px currentColor}
+#status{text-align:center;min-height:28px;margin:4px 0 6px;font-size:20px}
+.board{position:relative;background:var(--card);border:2px solid var(--line);border-radius:18px;padding:6px;box-shadow:0 10px 30px -18px #0006}
+svg{display:block;width:100%;height:auto;max-height:68vh;margin:auto;touch-action:manipulation;user-select:none}
+.zone{fill:transparent;cursor:pointer}
+.ghost{stroke:var(--pc);stroke-width:6;stroke-linecap:round;stroke-opacity:0;transition:stroke-opacity .12s}
+@media(hover:hover){.hit:hover .ghost{stroke-opacity:.4}}
+.locked .zone{cursor:not-allowed}.locked .hit:hover .ghost{stroke-opacity:0}
+.edge{stroke-width:6;stroke-linecap:round}
+.fresh{stroke-dasharray:70;stroke-dashoffset:70;animation:draw .28s ease-out forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.box{animation:pop .3s ease-out}@keyframes pop{from{opacity:0}}
+@media(prefers-reduced-motion:reduce){.fresh,.box{animation:none;stroke-dashoffset:0}.player{transition:none}}
+.controls{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;align-items:end}
+label{display:grid;gap:2px;font-size:15px;color:var(--soft);flex:1 1 130px}
+select,button,input{font:inherit;font-size:17px;min-height:44px;border-radius:12px;border:2px solid var(--line);background:var(--card);color:var(--ink);padding:6px 12px}
+button{cursor:pointer;flex:1 1 130px}
+button.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+select:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid var(--p1);outline-offset:2px}
+button:disabled{opacity:.45;cursor:default}
+.online{background:var(--card);border:2px dashed var(--p1);border-radius:16px;padding:12px 14px;margin:0 0 12px}
+.online[hidden],#share[hidden]{display:none}
+.online p{margin:0 0 8px}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.row input{flex:1 1 160px}
+#joinCode{text-transform:uppercase;letter-spacing:.12em}
+#code{font:700 30px/1 Caveat,cursive;letter-spacing:.08em;color:var(--p1)}
+#netStatus{color:var(--soft);margin:0}
+details{margin-top:18px;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:10px 16px}
+summary{cursor:pointer;font-size:19px}
+details p{margin:8px 0 2px;color:var(--soft)}
+#gameOver{position:absolute;inset:0;display:grid;place-items:center;background:color-mix(in srgb,var(--bg) 70%,transparent);border-radius:16px;backdrop-filter:blur(2px)}
+#gameOver[hidden]{display:none}
+#gameOver div{background:var(--card);border:2px solid var(--ink);border-radius:16px;padding:18px 26px;text-align:center;box-shadow:0 6px 0 -2px var(--ink)}
+#gameOver h2{font:700 44px/1.05 Caveat,cursive;margin:0 0 4px}
+#gameOver p{margin:0 0 12px;color:var(--soft)}
+</style></head><body>
+<main>
+<h1>Puntos y cajas</h1>
+<p class="sub">Une dos puntos por turno. Quien cierre una caja se la queda y vuelve a jugar.</p>
+
+<section class="online" id="online" hidden>
+ <div class="row"><button class="primary" id="hostBtn">Crear partida online</button></div>
+ <div id="share" hidden>
+  <p>Mándale este enlace a tu amigo, o dile el código <span id="code"></span></p>
+  <div class="row"><input id="shareLink" readonly aria-label="Enlace de la partida"><button id="copyBtn">Copiar</button><button id="shareBtn" hidden>Compartir</button></div>
+ </div>
+ <div class="row"><input id="joinCode" placeholder="Código de tu amigo" maxlength="5" autocomplete="off" aria-label="Código de partida"><button id="joinBtn">Unirse</button></div>
+ <p id="netStatus" aria-live="polite">Crea una partida o únete con el código de tu amigo.</p>
+</section>
+
+<div class="score">
+ <div class="player blue" id="card1"><span id="name1">Azul</span><b id="score1">0</b></div>
+ <div class="player red" id="card2"><span id="name2">Rojo</span><b id="score2">0</b></div>
+</div>
+<div id="status" aria-live="polite"></div>
+<div class="board">
+ <svg id="board" role="img" aria-label="Tablero de juego"></svg>
+ <div id="gameOver" hidden><div><h2 id="resultTitle"></h2><p id="resultText"></p><button class="primary" id="againBtn">Jugar otra vez</button></div></div>
+</div>
+<div class="controls">
+ <label>Modo<select id="mode"><option value="ai">Contra la máquina</option><option value="local">Dos jugadores (mismo dispositivo)</option><option value="online">Online con un amigo</option></select></label>
+ <label id="levelField">Dificultad<select id="level"><option value="easy">Fácil</option><option value="hard" selected>Difícil</option></select></label>
+ <label>Tablero<select id="size"><option value="3">3 × 3</option><option value="4" selected>4 × 4</option><option value="5">5 × 5</option><option value="6">6 × 6</option><option value="8">8 × 8</option></select></label>
+</div>
+<div class="controls">
+ <button id="undoBtn">↶ Deshacer</button>
+ <button class="primary" id="newBtn">Nueva partida</button>
+</div>
+<details><summary>Cómo se juega</summary>
+<p>En tu turno dibuja una línea entre dos puntos vecinos (toca o haz clic en el hueco). Si con tu línea completas el cuarto lado de una caja, la caja es tuya y tiras otra vez.</p>
+<p>Truco: evita dibujar el tercer lado de una caja, porque se la regalas a tu rival. Al final, gana quien tenga más cajas.</p>
+<p>Online: uno pulsa «Crear partida online» y le manda el enlace al otro. Quien crea la partida juega con azul y empieza.</p>
+</details>
+</main>
+<script src="peerjs.min.js"></script>
+<script>
+{
+// ---- constants & helpers -------------------------------------------------
+const CELL = 60, PAD = 22, CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', PEER_PREFIX = 'dots-and-boxes-';
+const $ = id => document.getElementById(id);
+const svg = $('board');
+const storage = {
+  get(k) { try { return localStorage.getItem(k) } catch (e) { return null } },
+  set(k, v) { try { localStorage.setItem(k, v) } catch (e) {} },
+};
+
+// ---- game state ----------------------------------------------------------
+// hLines[r][c]: horizontal edge, vLines[r][c]: vertical edge, boxes[r][c]: owner (0 = none)
+let rows, cols, hLines, vLines, boxes, turn, score, undoStack, lastMove, message = '';
+let mode, level, aiTimer = null;
+// online state: me = 1 (host, blue) or 2 (guest, red)
+let peer = null, conn = null, me = 1;
+
+for (const k of ['mode', 'level', 'size']) {
+  const v = storage.get('dab-' + k);
+  if (v && [...$(k).options].some(o => o.value === v)) $(k).value = v;
+}
+
+const neighbours = ([t, r, c]) => (t === 'h' ? [[r - 1, c], [r, c]] : [[r, c - 1], [r, c]])
+  .filter(([y, x]) => y >= 0 && y < rows && x >= 0 && x < cols);
+const sides = (g, r, c) => !!g.h[r][c] + !!g.h[r + 1][c] + !!g.v[r][c] + !!g.v[r][c + 1];
+const getEdge = (g, [t, r, c]) => (t === 'h' ? g.h : g.v)[r][c];
+const setEdge = (g, [t, r, c], p) => { (t === 'h' ? g.h : g.v)[r][c] = p };
+const freeEdges = g => {
+  const out = [];
+  g.h.forEach((a, r) => a.forEach((v, c) => { if (!v) out.push(['h', r, c]) }));
+  g.v.forEach((a, r) => a.forEach((v, c) => { if (!v) out.push(['v', r, c]) }));
+  return out;
+};
+const randomOf = a => a[Math.floor(Math.random() * a.length)];
+const grid = () => ({ h: hLines, v: vLines });
+const online = () => mode === 'online';
+const connected = () => !!(conn && conn.open);
+const isOver = () => score[1] + score[2] === rows * cols;
+
+function playerNames() {
+  if (online()) return ['', me === 1 ? 'Azul (tú)' : 'Azul', me === 2 ? 'Rojo (tú)' : 'Rojo'];
+  return ['', 'Azul', mode === 'ai' ? 'Máquina' : 'Rojo'];
+}
+
+function canPlay() {
+  if (aiTimer || !$('gameOver').hidden) return false;
+  if (mode === 'ai') return turn === 1;
+  if (online()) return connected() && turn === me;
+  return true;
+}
+
+// ---- lifecycle -----------------------------------------------------------
+function resetBoard() {
+  clearTimeout(aiTimer); aiTimer = null;
+  rows = cols = +$('size').value;
+  hLines = Array.from({ length: rows + 1 }, () => Array(cols).fill(0));
+  vLines = Array.from({ length: rows }, () => Array(cols + 1).fill(0));
+  boxes = Array.from({ length: rows }, () => Array(cols).fill(0));
+  turn = 1; score = [0, 0, 0]; undoStack = []; lastMove = null; message = '';
+  $('gameOver').hidden = true;
+}
+
+function newGame() {
+  mode = $('mode').value; level = $('level').value;
+  for (const k of ['mode', 'level', 'size']) storage.set('dab-' + k, $(k).value);
+  $('levelField').style.display = mode === 'ai' ? '' : 'none';
+  $('online').hidden = !online();
+  if (!online()) closeNetwork();
+  resetBoard();
+  if (online() && connected()) sendState();
+  render();
+}
+
+function play(move) {
+  if (getEdge(grid(), move)) return;
+  undoStack.push(JSON.stringify({ hLines, vLines, boxes, turn, score, lastMove }));
+  setEdge(grid(), move, turn);
+  let gained = 0;
+  for (const [r, c] of neighbours(move)) {
+    if (!boxes[r][c] && sides(grid(), r, c) === 4) { boxes[r][c] = turn; gained++ }
+  }
+  score[turn] += gained; lastMove = move;
+  message = gained ? (gained > 1 ? '¡Dos cajas! ' : '¡Caja! ') + 'Vuelve a jugar.' : '';
+  if (!gained) turn = 3 - turn;
+  if (online()) sendState();
+  afterMove(gained);
+}
+
+function afterMove(gained) {
+  render();
+  if (isOver()) return showResult();
+  if (mode === 'ai' && turn === 2) {
+    aiTimer = setTimeout(() => { aiTimer = null; play(aiChooseMove()) }, gained ? 380 : 520);
+    render();
+  }
+}
+
+function undo() {
+  if (!undoStack.length || online()) return;
+  clearTimeout(aiTimer); aiTimer = null;
+  let s;
+  // against the computer, rewind to the last position where it was the human's turn
+  do { s = JSON.parse(undoStack.pop()) } while (mode === 'ai' && s.turn === 2 && undoStack.length);
+  ({ hLines, vLines, boxes, turn, score, lastMove } = s);
+  message = ''; $('gameOver').hidden = true; render();
+}
+
+function showResult() {
+  const names = playerNames(), [a, b] = [score[1], score[2]];
+  let title;
+  if (a === b) title = '¡Empate!';
+  else if (mode === 'ai') title = a > b ? '¡Has ganado!' : 'Gana la máquina';
+  else if (online()) title = (a > b) === (me === 1) ? '¡Has ganado!' : 'Gana tu amigo';
+  else title = '¡Gana ' + (a > b ? names[1] : names[2]) + '!';
+  $('resultTitle').textContent = title;
+  $('resultText').textContent = names[1] + ' ' + a + ' · ' + names[2] + ' ' + b;
+  $('gameOver').hidden = false; message = 'Partida terminada.'; render();
+}
+
+// ---- computer player -------------------------------------------------------
+function aiChooseMove() {
+  const g = grid(), moves = freeEdges(g);
+  const completing = moves.filter(m => neighbours(m).some(([r, c]) => sides(g, r, c) === 3));
+  const safe = moves.filter(m => neighbours(m).every(([r, c]) => sides(g, r, c) < 2));
+  if (level === 'easy') {
+    if (completing.length && Math.random() < .6) return randomOf(completing);
+    return randomOf(safe.length && Math.random() < .5 ? safe : moves);
+  }
+  if (completing.length) return randomOf(completing);
+  if (safe.length) return randomOf(safe);
+  // every move gives something away: give away as few boxes as possible
+  let best = [], fewest = Infinity;
+  for (const m of moves) {
+    const n = boxesGivenAway(m);
+    if (n < fewest) { fewest = n; best = [m] } else if (n === fewest) best.push(m);
+  }
+  return randomOf(best);
+}
+
+function boxesGivenAway(move) {
+  const g = { h: hLines.map(a => a.slice()), v: vLines.map(a => a.slice()) };
+  setEdge(g, move, 1);
+  let taken = 0, progress = true;
+  while (progress) {
+    progress = false;
+    for (const m of freeEdges(g)) {
+      const k = neighbours(m).filter(([r, c]) => sides(g, r, c) === 3).length;
+      if (k) { setEdge(g, m, 1); taken += k; progress = true; break }
+    }
+  }
+  return taken;
+}
+
+// ---- online play (PeerJS, peer-to-peer) ----------------------------------
+function makeCode() {
+  let s = '';
+  for (let i = 0; i < 5; i++) s += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
+  return s;
+}
+function setNetStatus(text) { $('netStatus').textContent = text }
+
+function closeNetwork() {
+  if (conn) { try { conn.close() } catch (e) {} }
+  if (peer) { try { peer.destroy() } catch (e) {} }
+  conn = null; peer = null; $('share').hidden = true;
+}
+
+function hostGame() {
+  if (typeof Peer === 'undefined') return setNetStatus('No se pudo cargar el modo online.');
+  closeNetwork(); me = 1;
+  const code = makeCode();
+  setNetStatus('Creando partida…');
+  peer = new Peer(PEER_PREFIX + code);
+  peer.on('open', () => {
+    const link = location.origin + location.pathname + '#' + code;
+    $('code').textContent = code; $('shareLink').value = link;
+    $('shareBtn').hidden = !navigator.share;
+    $('share').hidden = false;
+    setNetStatus('Esperando a que tu amigo se una…');
+  });
+  peer.on('connection', c => {
+    if (connected()) { c.on('open', () => c.close()); return }   // game already has two players
+    conn = c; wireConnection();
+  });
+  peer.on('error', e => {
+    if (e.type === 'unavailable-id') return hostGame();           // code clash: try another one
+    setNetStatus('Error de conexión (' + e.type + '). Prueba otra vez.');
+  });
+}
+
+function joinGame(raw) {
+  const code = (raw || '').trim().toUpperCase();
+  if (!/^[A-Z0-9]{5}$/.test(code)) return setNetStatus('El código tiene 5 letras o números.');
+  if (typeof Peer === 'undefined') return setNetStatus('No se pudo cargar el modo online.');
+  closeNetwork(); me = 2;
+  setNetStatus('Conectando…');
+  peer = new Peer();
+  peer.on('open', () => { conn = peer.connect(PEER_PREFIX + code, { reliable: true }); wireConnection() });
+  peer.on('error', e => setNetStatus(e.type === 'peer-unavailable'
+    ? 'No existe esa partida. Revisa el código o pide uno nuevo.'
+    : 'Error de conexión (' + e.type + '). Prueba otra vez.'));
+}
+
+function wireConnection() {
+  conn.on('open', () => {
+    $('share').hidden = true;
+    setNetStatus('¡Conectados! Tú juegas con ' + (me === 1 ? 'azul y empiezas.' : 'rojo.'));
+    if (me === 1) { resetBoard(); sendState() }
+    render();
+  });
+  conn.on('data', applyRemoteState);
+  conn.on('close', () => { conn = null; setNetStatus('Tu amigo se ha desconectado.'); render() });
+  conn.on('error', () => setNetStatus('Se ha perdido la conexión.'));
+}
+
+function sendState() {
+  if (!connected()) return;
+  conn.send({ type: 'state', rows, cols, hLines, vLines, boxes, turn, score, lastMove });
+}
+
+function applyRemoteState(d) {
+  if (!d || d.type !== 'state' || !Array.isArray(d.hLines)) return;
+  ({ rows, cols, hLines, vLines, boxes, turn, score, lastMove } = d);
+  $('size').value = String(rows);
+  undoStack = []; message = ''; $('gameOver').hidden = true;
+  render();
+  if (isOver()) showResult();
+}
+
+// ---- rendering -----------------------------------------------------------
+function render() {
+  const names = playerNames(), W = cols * CELL + 2 * PAD, H = rows * CELL + 2 * PAD;
+  const X = c => PAD + c * CELL, Y = r => PAD + r * CELL;
+  const colour = p => p === 1 ? 'var(--p1)' : 'var(--p2)';
+  const isLast = m => lastMove && m[0] === lastMove[0] && m[1] === lastMove[1] && m[2] === lastMove[2];
+
+  let out = '<defs>' + [1, 2].map(p => `<pattern id="hatch${p}" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(${p === 1 ? 40 : -40})"><line x1="0" y1="0" x2="0" y2="9" stroke="${colour(p)}" stroke-width="2.4" stroke-opacity=".55"/></pattern>`).join('') + '</defs>';
+
+  boxes.forEach((a, r) => a.forEach((p, c) => {
+    if (p) out += `<g class="box"><rect x="${X(c) + 7}" y="${Y(r) + 7}" width="${CELL - 14}" height="${CELL - 14}" rx="5" fill="url(#hatch${p})"/><text x="${X(c) + CELL / 2}" y="${Y(r) + CELL / 2 + 11}" text-anchor="middle" font-family="Caveat,cursive" font-weight="700" font-size="32" fill="${colour(p)}">${names[p][0]}</text></g>`;
+  }));
+
+  const edge = (m, x1, y1, x2, y2) => {
+    const p = getEdge(grid(), m), horizontal = y1 === y2;
+    if (p) return `<line class="edge${isLast(m) ? ' fresh' : ''}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${colour(p)}"/>`;
+    const zone = horizontal
+      ? `x="${x1 + 8}" y="${y1 - 15}" width="${CELL - 16}" height="30"`
+      : `x="${x1 - 15}" y="${y1 + 8}" width="30" height="${CELL - 16}"`;
+    return `<g class="hit" data-move="${m.join(',')}"><rect class="zone" ${zone}/><line class="ghost" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/></g>`;
+  };
+  hLines.forEach((a, r) => a.forEach((_, c) => { out += edge(['h', r, c], X(c), Y(r), X(c + 1), Y(r)) }));
+  vLines.forEach((a, r) => a.forEach((_, c) => { out += edge(['v', r, c], X(c), Y(r), X(c), Y(r + 1)) }));
+  for (let r = 0; r <= rows; r++) for (let c = 0; c <= cols; c++) out += `<circle cx="${X(c)}" cy="${Y(r)}" r="5.5" fill="var(--dot)"/>`;
+
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.style.maxWidth = Math.max(W * 1.6, 320) + 'px';
+  svg.style.setProperty('--pc', colour(turn));
+  svg.innerHTML = out;
+  svg.classList.toggle('locked', !canPlay());
+
+  $('name1').textContent = names[1]; $('name2').textContent = names[2];
+  $('score1').textContent = score[1]; $('score2').textContent = score[2];
+  const playing = $('gameOver').hidden;
+  $('card1').classList.toggle('active', playing && turn === 1);
+  $('card2').classList.toggle('active', playing && turn === 2);
+
+  let whose;
+  if (mode === 'ai') whose = turn === 1 ? 'Tu turno' : 'La máquina está pensando…';
+  else if (online()) whose = !connected() ? 'Esperando conexión…' : turn === me ? 'Tu turno' : 'Turno de tu amigo';
+  else whose = 'Turno de ' + names[turn];
+  const myGain = message && canPlay();
+  const status = $('status');
+  status.textContent = !playing ? message : myGain ? message : whose;
+  status.style.color = playing ? colour(turn) : 'var(--soft)';
+  $('undoBtn').disabled = !undoStack.length || online();
+}
+
+// ---- events --------------------------------------------------------------
+svg.addEventListener('click', e => {
+  const hit = e.target.closest('.hit');
+  if (!hit || !canPlay()) return;
+  const [t, r, c] = hit.dataset.move.split(',');
+  play([t, +r, +c]);
+});
+$('newBtn').addEventListener('click', newGame);
+$('againBtn').addEventListener('click', newGame);
+$('undoBtn').addEventListener('click', undo);
+for (const k of ['mode', 'level', 'size']) $(k).addEventListener('change', newGame);
+$('hostBtn').addEventListener('click', hostGame);
+$('joinBtn').addEventListener('click', () => joinGame($('joinCode').value));
+$('joinCode').addEventListener('keydown', e => { if (e.key === 'Enter') joinGame($('joinCode').value) });
+$('copyBtn').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText($('shareLink').value); $('copyBtn').textContent = '¡Copiado!' }
+  catch (e) { $('shareLink').select() }
+  setTimeout(() => { $('copyBtn').textContent = 'Copiar' }, 1500);
+});
+$('shareBtn').addEventListener('click', () => {
+  navigator.share({ title: 'Puntos y cajas', text: '¡Juega conmigo a puntos y cajas!', url: $('shareLink').value }).catch(() => {});
+});
+
+// opening a link like …/#ABCDE joins that game directly
+const hashCode = location.hash.slice(1).toUpperCase();
+if (/^[A-Z0-9]{5}$/.test(hashCode)) $('mode').value = 'online';
+newGame();
+if (/^[A-Z0-9]{5}$/.test(hashCode)) {
+  $('joinCode').value = hashCode;
+  window.history.replaceState(null, '', location.pathname);
+  joinGame(hashCode);
+}
+}
+</script>
+</body></html>
