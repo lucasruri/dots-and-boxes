@@ -1,7 +1,7 @@
 (() => {
   const translations = {
     en: {
-      "Puntos y cajas":"Dots and Boxes",
+      "Puntos y cajas":"Dots and Boxes","Idioma":"Language",
       "Une dos puntos por turno. Quien cierre una caja se la queda y vuelve a jugar.":"Connect two dots each turn. Whoever completes a box claims it and plays again.",
       "Crear partida online":"Create online game",
       "Mándale este enlace a tu amigo, o dile el código":"Send this link to your friend, or tell them the code",
@@ -28,7 +28,7 @@
       "Tu amigo se ha desconectado.":"Your friend has disconnected.","Se ha perdido la conexión.":"The connection was lost."
     },
     zh: {
-      "Puntos y cajas":"点格棋",
+      "Puntos y cajas":"点格棋","Idioma":"语言",
       "Une dos puntos por turno. Quien cierre una caja se la queda y vuelve a jugar.":"每回合连接两个点。完成一个方格的玩家获得该方格，并再走一回合。",
       "Crear partida online":"创建在线游戏",
       "Mándale este enlace a tu amigo, o dile el código":"把链接发给朋友，或告诉对方游戏代码",
@@ -49,7 +49,7 @@
       "Esperando a que tu amigo se una…":"等待朋友加入…","¡Conectados! Tú juegas con ":"已连接！你使用",
       " y empiezas.":"，并先开始。",".":"。",
       "No se pudo cargar el modo online.":"无法加载在线模式。",
-      "Creando partida…":"正在创建游戏…","Error de conexión (":"连接错误（","). Prueba otra vez。": "）。请重试。",
+      "Creando partida…":"正在创建游戏…","Error de conexión (":"连接错误（","). Prueba otra vez.": "）。请重试。",
       "El código tiene 5 letras o números.":"游戏代码必须由5个字母或数字组成。",
       "Conectando…":"正在连接…","No existe esa partida. Revisa el código o pide uno nuevo.":"找不到该游戏。请检查代码或索取新代码。",
       "Tu amigo se ha desconectado.":"朋友已断开连接。","Se ha perdido la conexión.":"连接已中断。"
