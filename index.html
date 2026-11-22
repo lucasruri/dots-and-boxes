@@ -4,13 +4,13 @@
 <meta name="description" content="Juego de puntos y cajas: contra la máquina, en el mismo dispositivo u online con un amigo.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='6' y='6' width='20' height='20' fill='%231f4fd1' fill-opacity='.25'/%3E%3Cpath d='M6 6h20v20' stroke='%231f4fd1' stroke-width='3' fill='none'/%3E%3Cpath d='M6 6v20h20' stroke='%23d4262c' stroke-width='3' fill='none'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Patrick+Hand&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 /* Theme: a squared school notebook where a blue pen and a red pen fight it out.
    Night theme: a chalkboard. Fonts: Caveat (headings) + Patrick Hand (UI). */
 :root{color-scheme:light dark;--bg:light-dark(#fdfdfb,#1c2a23);--grid:light-dark(#d5e4f0,#273a31);--margin:light-dark(#f3a9a9,#4d3634);--ink:light-dark(#1c2333,#eef1ea);--soft:light-dark(#5b6475,#a8b6ad);--p1:light-dark(#1f4fd1,#86b6ff);--p2:light-dark(#d4262c,#ff8d7d);--dot:light-dark(#1c2333,#f3f5ef);--card:light-dark(#fff,#22332a);--line:light-dark(#dfe5ec,#34483d)}
 *{box-sizing:border-box;min-width:0}
-body{margin:0;color:var(--ink);font:18px/1.45 "Patrick Hand",system-ui,sans-serif;overflow-x:clip;min-height:100vh;
+body{margin:0;color:var(--ink);font:18px/1.45 "Patrick Hand","Noto Sans SC",system-ui,sans-serif;overflow-x:clip;min-height:100vh;
 background:linear-gradient(90deg,transparent calc(max(3vw,14px) - 1px),var(--margin) calc(max(3vw,14px) - 1px),var(--margin) calc(max(3vw,14px) + 1px),transparent calc(max(3vw,14px) + 1px)),
 repeating-linear-gradient(0deg,var(--grid) 0 1px,transparent 1px 24px),repeating-linear-gradient(90deg,var(--grid) 0 1px,transparent 1px 24px),var(--bg)}
 main{max-width:640px;margin:0 auto;padding:clamp(18px,4vw,40px) max(4vw,22px) 40px}
@@ -87,6 +87,9 @@ details p{margin:8px 0 2px;color:var(--soft)}
  <label>Tablero<select id="size"><option value="3">3 × 3</option><option value="4" selected>4 × 4</option><option value="5">5 × 5</option><option value="6">6 × 6</option><option value="8">8 × 8</option></select></label>
 </div>
 <div class="controls">
+ <label>Idioma<select id="language" aria-label="Idioma"><option value="es">Español</option><option value="en">English</option><option value="zh">中文</option></select></label>
+</div>
+<div class="controls">
  <button id="undoBtn">↶ Deshacer</button>
  <button class="primary" id="newBtn">Nueva partida</button>
 </div>
@@ -97,6 +100,7 @@ details p{margin:8px 0 2px;color:var(--soft)}
 </details>
 </main>
 <script src="peerjs.min.js"></script>
+<script src="i18n.js"></script>
 <script>
 {
 // ---- constants & helpers -------------------------------------------------
