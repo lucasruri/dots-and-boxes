@@ -1,6 +1,6 @@
 # Dots and Boxes
 
-A browser game of Dots and Boxes ("Puntos y cajas"). The UI is in Spanish.
+A browser game of Dots and Boxes ("Puntos y cajas"). The UI supports Spanish, English, and Simplified Chinese. Choose a language from the selector; the choice is saved in the browser.
 
 - **Against the computer**, easy or hard.
 - **Two players on the same device.**
