@@ -97,7 +97,7 @@
     applying = true;
     document.documentElement.lang = current() === "zh" ? "zh-CN" : current() === "en" ? "en" : "es";
     document.title = translate("Puntos y cajas");
-    for (const node of document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)) updateNode(node.currentNode);
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);\n    while (walker.nextNode()) updateNode(walker.currentNode);
     updateAttributes(document.body);
     applying = false;
   }
